@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Unity.WebRTC
@@ -17,7 +18,9 @@ namespace Unity.WebRTC
         public event AudioReadEventHandler onAudioRead;
         public bool sender;
         public bool loopback = false;
+        public int channelIndex = -1;
         private int m_sampleRate;
+        public AudioSplitHandler audioSplitHandler;
 
         void OnEnable()
         {
@@ -44,8 +47,18 @@ namespace Unity.WebRTC
         /// <param name="channels"></param>
         void OnAudioFilterRead(float[] data, int channels)
         {
-            onAudioRead?.Invoke(data, channels, m_sampleRate);
-
+            if(audioSplitHandler != null && channelIndex != -1)
+            {
+                if(audioSplitHandler.isBufferEmpty())
+                    onAudioRead?.Invoke(data, channels, m_sampleRate);
+                float[] cache = audioSplitHandler.GetAudioTrack(channelIndex);
+                if(cache != null && cache.Length > 0)
+                    Array.Copy(cache, data, data.Length);                    
+            }
+            else
+            {
+                onAudioRead?.Invoke(data, channels, m_sampleRate);
+            }
             if (sender && !loopback)
             {
                 for (int i = 0; i < data.Length; i++)
