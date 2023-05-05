@@ -6,22 +6,23 @@ namespace Unity.WebRTC
     {
         public Dictionary<int, AudioTrackFilter> audioTrackDictionary = new Dictionary<int, AudioTrackFilter>();
         private int channelCount;
-        private int audioBufferSize;
+        private int hardwarespeakersCount = 2;
+        private int outputBufferSize;
 
         public AudioSplitHandler(int count, int bufferSize)
         {
-                channelCount = count;
-                audioBufferSize = count * bufferSize;
+            channelCount = count;
+            outputBufferSize = hardwarespeakersCount * bufferSize;
         }
 
         public void AddTrack(int index)
         {
-                audioTrackDictionary.Add(index, new AudioTrackFilter(audioBufferSize));
+            audioTrackDictionary.Add(index, new AudioTrackFilter(outputBufferSize));
             
         }
         public void SetAudioTrack(int index, float[] data)
         {
-                audioTrackDictionary[index].SetAudioTrack(data);
+            audioTrackDictionary[index].SetAudioTrack(data);
         }
         public bool isBufferEmpty()
         {
@@ -35,9 +36,9 @@ namespace Unity.WebRTC
         }
         public float[] GetAudioTrack(int index)
         {
-                if(audioTrackDictionary[index] != null)
-                    return audioTrackDictionary[index].GetAudioTrack();
-                return null;
+            if(audioTrackDictionary[index] != null)
+                return audioTrackDictionary[index].GetAudioTrack();
+            return null;
         }
 
         private float[] GetChannelData(float[] data, int channelIndex)
@@ -56,14 +57,14 @@ namespace Unity.WebRTC
             {
                 float[] list = GetChannelData(data, key);
                 int index = 0;
-                float[] cachebufer = new float[audioBufferSize];
-                for(int i = 0; i< list.Length && index < audioBufferSize-1 ; i++)
+                float[] cachebuffer = new float[outputBufferSize];
+                for(int i = 0; i< list.Length && index < outputBufferSize-hardwarespeakersCount ; i++)//fill all the hardware speakers
                 {
-                    cachebufer[index] = list[i];
-                    cachebufer[index+1] = list[i];
-                    index +=2;
+                    for(int j =0; j < hardwarespeakersCount; j++)
+                        cachebuffer[index+j] = list[i];
+                    index +=hardwarespeakersCount;
                 }
-                SetAudioTrack(key, cachebufer);
+                SetAudioTrack(key, cachebuffer);
             }
         }
     }

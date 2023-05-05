@@ -22,11 +22,11 @@ namespace Unity.WebRTC
             track._streamRenderer.Source = source;
         }
 
-        public static void SetTrack(this AudioSource source, AudioStreamTrack track, int channelIndex, int channelCount, int[] channelmap)
+        public static void SetTrack(this AudioSource source, AudioStreamTrack track, int channelIndex, int channelCount)
         {
             if(channelIndex > -1 && channelCount != -1)
             {
-                track._streamRenderer.SetChannelCount(channelCount, channelmap);
+                track._streamRenderer.SetChannelCount(channelCount);
                 track._streamRenderer.AddAudioSource(source, channelIndex);
             }
         }
@@ -88,15 +88,13 @@ namespace Unity.WebRTC
             private AudioStreamTrack _track;
             private int inboundAudioChannelCount = -1;
             private int audioBufferSize = 1024;
-            private int[] channelOrder;
             AudioSplitHandler audioHandler;
-            public void SetChannelCount(int count, int[] order)
+            public void SetChannelCount(int count)
             {
                 if(inboundAudioChannelCount != count)
                 {
                     audioBufferSize = AudioSettings.GetConfiguration().dspBufferSize;
                     inboundAudioChannelCount = count;
-                    channelOrder = order;
                     audioHandler = new AudioSplitHandler(inboundAudioChannelCount, audioBufferSize);
                 }
             }
@@ -119,58 +117,8 @@ namespace Unity.WebRTC
 
             public void AddAudioSource(AudioSource source, int index)
             {
-                index = getChannelIndex(index);
                 AddFilter(source, index);
-                source.gameObject.name = "Speaker_"+ getspeakername(index);
             }
-
-	        private int getChannelIndex(int orderIndex)
-	        {
-	            if(inboundAudioChannelCount == 6)
-	            {
-	                return channelOrder[orderIndex];
-	            }
-	            return orderIndex;
-	        }
-            
-	        private string getspeakername(int channelIndex)
-	        {
-	            //channel map:0,4,1,2,3,5 
-	            if(inboundAudioChannelCount == 6)
-	            {
-	                switch (channelIndex)
-	                {
-	                    case 0:
-	                        return "center";
-	                    case 4:
-	                        return "left";
-	                    case 1:
-	                        return "right";
-	                    case 2:
-	                        return "surround-left";
-	                    case 3:
-	                        return "surround-right";
-	                    case 5:
-	                        return "lfe";
-	                    default:
-	                        return "invalid";
-	                }
-	            }
-	            else if(inboundAudioChannelCount == 2)
-	            {
-	                switch (channelIndex)
-	                {
-	                    case 0:
-	                        return "left";
-	                    case 1:
-	                        return "right";
-	                    default:
-	                        return "invalid";
-	                }
-	            }
-	            return "invalid";
-	        }
-
 
             private static T GetOrAddComponent<T>(GameObject go) where T : Component
             {
